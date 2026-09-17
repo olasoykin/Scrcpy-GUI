@@ -29,7 +29,7 @@ class ScrcpyWindow(Adw.ApplicationWindow):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.set_title("Scrcpy GUI")
-        self.set_icon_name("com.github.scrcpy_gui")
+        self.set_icon_name("com.github.scrcpy-gui")
         self.set_default_size(920, 700)
         self._process = None
         # True while a stop was requested by the user, so we don't treat

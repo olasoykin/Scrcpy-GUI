@@ -12,7 +12,7 @@ from gi.repository import Gtk, Adw, Gdk, Gio, GLib
 
 from window import ScrcpyWindow
 
-APP_ID = "com.github.scrcpy_gui"
+APP_ID = "com.github.scrcpy-gui"
 
 
 class ScrcpyApp(Adw.Application):

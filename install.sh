@@ -54,21 +54,21 @@ echo "==> Installing application icon (SVG and multisize PNG)..."
 SCALABLE_DIR="$ICON_BASE/scalable/apps"
 mkdir -p "$SCALABLE_DIR"
 
-if [ -f "$SCRIPT_DIR/assets/com.github.scrcpy_gui.svg" ]; then
-    cp "$SCRIPT_DIR/assets/com.github.scrcpy_gui.svg" "$SCALABLE_DIR/com.github.scrcpy_gui.svg"
-    cp "$SCRIPT_DIR/assets/com.github.scrcpy_gui.svg" "$PIXMAPS_DIR/com.github.scrcpy_gui.svg"
+if [ -f "$SCRIPT_DIR/assets/com.github.scrcpy-gui.svg" ]; then
+    cp "$SCRIPT_DIR/assets/com.github.scrcpy-gui.svg" "$SCALABLE_DIR/com.github.scrcpy-gui.svg"
+    cp "$SCRIPT_DIR/assets/com.github.scrcpy-gui.svg" "$PIXMAPS_DIR/com.github.scrcpy-gui.svg"
 fi
 
 for s in 16 32 48 64 128 256 512; do
     if [ -f "$SCRIPT_DIR/assets/icon-${s}.png" ]; then
         SIZE_DIR="$ICON_BASE/${s}x${s}/apps"
         mkdir -p "$SIZE_DIR"
-        cp "$SCRIPT_DIR/assets/icon-${s}.png" "$SIZE_DIR/com.github.scrcpy_gui.png"
+        cp "$SCRIPT_DIR/assets/icon-${s}.png" "$SIZE_DIR/com.github.scrcpy-gui.png"
     fi
 done
 
 if [ -f "$SCRIPT_DIR/assets/icon-256.png" ]; then
-    cp "$SCRIPT_DIR/assets/icon-256.png" "$PIXMAPS_DIR/com.github.scrcpy_gui.png"
+    cp "$SCRIPT_DIR/assets/icon-256.png" "$PIXMAPS_DIR/com.github.scrcpy-gui.png"
 fi
 
 # Generate .desktop file with exact absolute path to executable
@@ -81,17 +81,17 @@ Name=Scrcpy GUI
 GenericName=Android Screen Mirroring
 Comment=Graphical interface to mirror and control Android devices using scrcpy
 Exec=$BIN_DIR/scrcpy-gui %U
-Icon=com.github.scrcpy_gui
+Icon=com.github.scrcpy-gui
 Terminal=false
 Categories=Utility;RemoteAccess;GTK;
 Keywords=scrcpy;android;mirror;adb;screen;adwaita;
-StartupWMClass=com.github.scrcpy_gui
+StartupWMClass=com.github.scrcpy-gui
 EOF
 
 echo "==> Installing desktop shortcut (.desktop)..."
 for ddir in "${DESKTOP_DIRS[@]}"; do
-    cp "$DESKTOP_TMP" "$ddir/com.github.scrcpy_gui.desktop"
-    chmod +x "$ddir/com.github.scrcpy_gui.desktop"
+    cp "$DESKTOP_TMP" "$ddir/com.github.scrcpy-gui.desktop"
+    chmod +x "$ddir/com.github.scrcpy-gui.desktop"
     touch "$ddir"
     if command -v update-desktop-database >/dev/null 2>&1; then
         update-desktop-database "$ddir" 2>/dev/null || true

@@ -18,8 +18,8 @@ echo "==> Uninstalling Scrcpy GUI from $INSTALL_PREFIX..."
 
 rm -f "$BIN_DIR/scrcpy-gui"
 rm -rf "$APP_DIR"
-rm -f "$DESKTOP_DIR/com.github.scrcpy_gui.desktop"
-rm -f "$ICON_DIR/com.github.scrcpy_gui.svg"
+rm -f "$DESKTOP_DIR/com.github.scrcpy-gui.desktop"
+rm -f "$ICON_DIR/com.github.scrcpy-gui.svg"
 
 if command -v update-desktop-database >/dev/null 2>&1; then
     update-desktop-database "$DESKTOP_DIR" 2>/dev/null || true
