@@ -18,7 +18,13 @@ class CameraPage(BasePage):
         
         # Group "Camera Settings"
         grp_set = self._add_group("Camera Settings")
-        self.camera_size = self._add_entry(grp_set, "Camera Size (WxH)")
+        self.camera_size = self._add_resolution(
+            grp_set,
+            "Camera Size",
+            subtitle="Camera resolution width × height",
+            width_placeholder="Width",
+            height_placeholder="Height"
+        )
         self.camera_fps = self._add_entry(grp_set, "Camera FPS")
         self.camera_ar = self._add_entry(grp_set, "Camera Aspect Ratio")
         self.camera_zoom = self._add_entry(grp_set, "Camera Zoom")
@@ -26,29 +32,31 @@ class CameraPage(BasePage):
         self.camera_torch = self._add_switch(grp_set, "Camera Torch", "Turn on flash/torch when camera starts")
 
     def get_args(self) -> list[str]:
-        args = []
+        camera_args = []
         val = self._combo_val(self.camera_facing)
-        if val: args.append(f'--camera-facing={val}')
+        if val: camera_args.append(f'--camera-facing={val}')
         
         val = self._entry_val(self.camera_id)
-        if val: args.append(f'--camera-id={val}')
+        if val: camera_args.append(f'--camera-id={val}')
         
         val = self._entry_val(self.camera_size)
-        if val: args.append(f'--camera-size={val}')
+        if val: camera_args.append(f'--camera-size={val}')
         
         val = self._entry_val(self.camera_fps)
-        if val: args.append(f'--camera-fps={val}')
+        if val: camera_args.append(f'--camera-fps={val}')
         
         val = self._entry_val(self.camera_ar)
-        if val: args.append(f'--camera-ar={val}')
+        if val: camera_args.append(f'--camera-ar={val}')
         
         val = self._entry_val(self.camera_zoom)
-        if val: args.append(f'--camera-zoom={val}')
+        if val: camera_args.append(f'--camera-zoom={val}')
         
-        if self.high_speed.get_active(): args.append('--camera-high-speed')
-        if self.camera_torch.get_active(): args.append('--camera-torch')
+        if self.high_speed.get_active(): camera_args.append('--camera-high-speed')
+        if self.camera_torch.get_active(): camera_args.append('--camera-torch')
         
-        return args
+        if camera_args:
+            return ['--video-source=camera'] + camera_args
+        return []
 
     def reset(self):
         self.camera_facing.set_selected(0)

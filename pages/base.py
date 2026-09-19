@@ -7,6 +7,34 @@ gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw
 
 
+class ResolutionEntry:
+    """Wrapper around two separate Gtk.Entry fields (Width x Height) for resolution input."""
+
+    def __init__(self, entry_w: Gtk.Entry, entry_h: Gtk.Entry):
+        self.entry_w = entry_w
+        self.entry_h = entry_h
+
+    def get_text(self) -> str:
+        w = self.entry_w.get_text().strip()
+        h = self.entry_h.get_text().strip()
+        if w and h:
+            return f"{w}x{h}"
+        elif w:
+            return w
+        elif h:
+            return h
+        return ""
+
+    def set_text(self, text: str):
+        if "x" in text:
+            parts = text.split("x", 1)
+            self.entry_w.set_text(parts[0].strip())
+            self.entry_h.set_text(parts[1].strip())
+        else:
+            self.entry_w.set_text(text.strip())
+            self.entry_h.set_text("")
+
+
 class BasePage(Adw.PreferencesPage):
     """Abstract base for every settings page.
 
@@ -56,6 +84,40 @@ class BasePage(Adw.PreferencesPage):
         group.add(row)
         return row
 
+    def _add_resolution(
+        self,
+        group: Adw.PreferencesGroup,
+        title: str,
+        subtitle: str = "",
+        width_placeholder: str = "Width",
+        height_placeholder: str = "Height",
+    ) -> ResolutionEntry:
+        """Create a row with two separate input fields for Width x Height."""
+        row = Adw.ActionRow(title=title)
+        if subtitle:
+            row.set_subtitle(subtitle)
+
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6, valign=Gtk.Align.CENTER)
+
+        entry_w = Gtk.Entry(placeholder_text=width_placeholder, width_chars=6)
+        entry_w.connect("changed", self._notify)
+
+        lbl = Gtk.Label(label="×")
+        lbl.add_css_class("dim-label")
+
+        entry_h = Gtk.Entry(placeholder_text=height_placeholder, width_chars=6)
+        entry_h.connect("changed", self._notify)
+
+        box.append(entry_w)
+        box.append(lbl)
+        box.append(entry_h)
+
+        row.add_suffix(box)
+        row.set_activatable_widget(entry_w)
+        group.add(row)
+
+        return ResolutionEntry(entry_w, entry_h)
+
     def _add_combo(
         self,
         group: Adw.PreferencesGroup,
@@ -94,8 +156,10 @@ class BasePage(Adw.PreferencesPage):
         return None
 
     @staticmethod
-    def _entry_val(entry: Adw.EntryRow) -> str:
-        return entry.get_text().strip()
+    def _entry_val(entry) -> str:
+        if hasattr(entry, "get_text"):
+            return entry.get_text().strip()
+        return ""
 
     # ------------------------------------------------------------------
     # Interface (subclasses must implement)

@@ -196,10 +196,32 @@ class ScrcpyWindow(Adw.ApplicationWindow):
     # ------------------------------------------------------------------
 
     def _build_command(self) -> list[str]:
-        """Collect args from all pages and return the full command."""
+        """Collect args from all pages and return the full command.
+
+        Flags that may be emitted by more than one page (e.g.
+        ``--flex-display``, ``--fullscreen``, ``--new-display``,
+        ``--mouse``, ``--keyboard``) are deduplicated so that only the
+        *first* occurrence wins.  For key=value flags, the flag name
+        (everything before ``=``) is used as the dedup key.
+        """
         cmd = ["scrcpy"]
+        seen_flags: set[str] = set()
+
+        device_selectors = {"--serial", "--select-usb", "--select-tcpip", "--tcpip"}
+
         for page in self._pages:
-            cmd.extend(page.get_args())
+            for arg in page.get_args():
+                key = arg.split("=", 1)[0]
+                if key in device_selectors:
+                    if "__device_selector__" in seen_flags:
+                        continue
+                    seen_flags.add("__device_selector__")
+                elif key in seen_flags:
+                    continue
+                else:
+                    seen_flags.add(key)
+                cmd.append(arg)
+
         return cmd
 
     def _update_command(self):

@@ -57,6 +57,22 @@ class DisplayPage(BasePage):
         self.window_width = self._add_entry(grp_window, "Window Width")
         self.window_height = self._add_entry(grp_window, "Window Height")
 
+        # Group: Virtual Display
+        grp_vd = self._add_group("Virtual Display")
+        self.display_id = self._add_entry(grp_vd, "Display ID")
+        self.new_display = self._add_switch(grp_vd, "New Display", subtitle="Create a new virtual display")
+        self.new_display_res = self._add_resolution(
+            grp_vd,
+            "Resolution",
+            subtitle="Virtual display width × height",
+            width_placeholder="Width",
+            height_placeholder="Height"
+        )
+        self.new_display_dpi = self._add_entry(grp_vd, "DPI")
+        self.flex_display = self._add_switch(grp_vd, "Flex Display", subtitle="Resize virtual display to match window")
+        self.no_vd_destroy_content = self._add_switch(grp_vd, "Keep Apps on Close", subtitle="Move apps to main display instead of destroying")
+        self.no_vd_system_decorations = self._add_switch(grp_vd, "No System Decorations", subtitle="Disable virtual display system decorations")
+
     def get_args(self) -> list[str]:
         args = []
         val = self._entry_val(self.max_size)
@@ -101,6 +117,25 @@ class DisplayPage(BasePage):
         val = self._entry_val(self.window_height)
         if val: args.append(f'--window-height={val}')
 
+        val = self._entry_val(self.display_id)
+        if val: args.append(f'--display-id={val}')
+
+        if self.new_display.get_active():
+            res = self._entry_val(self.new_display_res)
+            dpi = self._entry_val(self.new_display_dpi)
+            if res and dpi:
+                args.append(f'--new-display={res}/{dpi}')
+            elif res:
+                args.append(f'--new-display={res}')
+            elif dpi:
+                args.append(f'--new-display=/{dpi}')
+            else:
+                args.append('--new-display')
+
+        if self.flex_display.get_active(): args.append('--flex-display')
+        if self.no_vd_destroy_content.get_active(): args.append('--no-vd-destroy-content')
+        if self.no_vd_system_decorations.get_active(): args.append('--no-vd-system-decorations')
+
         return args
 
     def reset(self) -> None:
@@ -124,3 +159,11 @@ class DisplayPage(BasePage):
         self.window_y.set_text('')
         self.window_width.set_text('')
         self.window_height.set_text('')
+        self.display_id.set_text('')
+        self.new_display.set_active(False)
+        self.new_display_res.set_text('')
+        self.new_display_dpi.set_text('')
+        self.flex_display.set_active(False)
+        self.no_vd_destroy_content.set_active(False)
+        self.no_vd_system_decorations.set_active(False)
+

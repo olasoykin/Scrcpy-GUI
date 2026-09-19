@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Launcher script for Scrcpy GUI
+
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+
+if [ -f "$SCRIPT_DIR/main.py" ]; then
+    exec python3 "$SCRIPT_DIR/main.py" "$@"
+elif [ -f "$HOME/.local/share/scrcpy-gui/main.py" ]; then
+    exec python3 "$HOME/.local/share/scrcpy-gui/main.py" "$@"
+elif [ -f "/usr/local/share/scrcpy-gui/main.py" ]; then
+    exec python3 "/usr/local/share/scrcpy-gui/main.py" "$@"
+elif [ -f "/usr/share/scrcpy-gui/main.py" ]; then
+    exec python3 "/usr/share/scrcpy-gui/main.py" "$@"
+else
+    echo "Error: Scrcpy GUI main.py not found." >&2
+    exit 1
+fi

@@ -1,58 +1,54 @@
 <svg xmlns="http://www.w3.org/2000/svg"
-     width="474" height="474"
+     width="474"
+     height="474"
      viewBox="0 0 474 474">
 
-  <defs>
-    <linearGradient id="background"
-                    x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#A8E6A3"/>
-      <stop offset="100%" stop-color="#8CCCF0"/>
-    </linearGradient>
-
-    <linearGradient id="androidGreen"
-                    x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#A8F0A0"/>
-      <stop offset="100%" stop-color="#65D6B2"/>
-    </linearGradient>
-  </defs>
-
-  <!-- Fondo con esquinas redondeadas -->
-  <rect width="474" height="474"
+  <!-- Fondo sólido con esquinas redondeadas -->
+  <rect width="474"
+        height="474"
         rx="76"
-        fill="url(#background)"/>
+        fill="#8ED6B5"/>
 
   <!-- Teléfono -->
-  <rect x="113" y="23"
-        width="248" height="428"
+  <rect x="113"
+        y="23"
+        width="248"
+        height="428"
         rx="49"
         fill="#080808"/>
 
   <!-- Altavoz -->
-  <rect x="200" y="51"
-        width="74" height="8"
+  <rect x="200"
+        y="51"
+        width="74"
+        height="8"
         rx="4"
         fill="#D9D9D9"/>
 
   <!-- Pantalla -->
-  <rect x="133" y="96"
-        width="208" height="281"
+  <rect x="133"
+        y="96"
+        width="208"
+        height="281"
         rx="7"
         fill="#111111"/>
 
-  <!-- Antenas -->
+  <!-- Antenas de Android -->
   <g fill="none"
-     stroke="url(#androidGreen)"
+     stroke="#8ED6B5"
      stroke-width="8"
      stroke-linecap="round">
+
     <path d="M208 190 L190 164"/>
     <path d="M266 190 L284 164"/>
+
   </g>
 
   <!-- Cabeza de Android -->
   <path d="M177 248
            A60 60 0 0 1 297 248
            Z"
-        fill="url(#androidGreen)"/>
+        fill="#8ED6B5"/>
 
   <!-- Ojos -->
   <g fill="#111111">
@@ -61,11 +57,13 @@
   </g>
 
   <!-- Botón de inicio -->
-  <circle cx="237" cy="414"
+  <circle cx="237"
+          cy="414"
           r="21"
           fill="#D9D9D9"/>
 
-  <circle cx="237" cy="414"
+  <circle cx="237"
+          cy="414"
           r="14"
           fill="#080808"/>
 

@@ -29,6 +29,63 @@ else
     echo "==> Installing Scrcpy GUI for current user ($HOME)..."
 fi
 
+echo "==> Searching for and removing previous versions..."
+
+# Target files and directories to clean up before installing
+CLEANUP_PATHS=(
+    "$HOME/.local/share/scrcpy-gui"
+    "$HOME/.local/bin/scrcpy-gui"
+    "$HOME/.local/share/applications/com.github.scrcpy-gui.desktop"
+    "$HOME/.local/share/applications/scrcpy-gui.desktop"
+    "$HOME/.local/share/pixmaps/com.github.scrcpy-gui.svg"
+    "$HOME/.local/share/pixmaps/com.github.scrcpy-gui.png"
+    "$HOME/.local/share/pixmaps/scrcpy-gui.png"
+    "$HOME/.local/share/pixmaps/scrcpy-gui.svg"
+)
+
+if [ "$EUID" -eq 0 ]; then
+    CLEANUP_PATHS+=(
+        "/usr/local/share/scrcpy-gui"
+        "/usr/local/bin/scrcpy-gui"
+        "/usr/local/share/applications/com.github.scrcpy-gui.desktop"
+        "/usr/local/share/applications/scrcpy-gui.desktop"
+        "/usr/local/share/pixmaps/com.github.scrcpy-gui.svg"
+        "/usr/local/share/pixmaps/com.github.scrcpy-gui.png"
+        "/usr/local/share/pixmaps/scrcpy-gui.png"
+        "/usr/local/share/pixmaps/scrcpy-gui.svg"
+        "/usr/share/scrcpy-gui"
+        "/usr/bin/scrcpy-gui"
+        "/usr/share/applications/com.github.scrcpy-gui.desktop"
+        "/usr/share/applications/scrcpy-gui.desktop"
+    )
+fi
+
+for cpath in "${CLEANUP_PATHS[@]}"; do
+    if [ -e "$cpath" ] || [ -L "$cpath" ]; then
+        echo "  - Removing old file/directory: $cpath"
+        rm -rf "$cpath" 2>/dev/null || true
+    fi
+done
+
+# Clean icons from hicolor directories
+ICON_BASES=("$HOME/.local/share/icons/hicolor")
+if [ "$EUID" -eq 0 ]; then
+    ICON_BASES+=("/usr/local/share/icons/hicolor" "/usr/share/icons/hicolor")
+fi
+
+for ibase in "${ICON_BASES[@]}"; do
+    if [ -d "$ibase" ]; then
+        find "$ibase" -type f \( -name "com.github.scrcpy-gui.*" -o -name "scrcpy-gui.*" \) -delete 2>/dev/null || true
+    fi
+done
+
+# Uninstall pip package if previously installed
+if command -v pip3 >/dev/null 2>&1; then
+    pip3 uninstall -y scrcpy-gui >/dev/null 2>&1 || true
+elif command -v pip >/dev/null 2>&1; then
+    pip uninstall -y scrcpy-gui >/dev/null 2>&1 || true
+fi
+
 # Create key directories
 mkdir -p "$BIN_DIR"
 mkdir -p "$APP_DIR"
@@ -41,6 +98,9 @@ done
 echo "==> Copying application files..."
 cp -r "$SCRIPT_DIR/main.py" "$APP_DIR/"
 cp -r "$SCRIPT_DIR/window.py" "$APP_DIR/"
+if [ -f "$SCRIPT_DIR/qrcodegen.py" ]; then
+    cp -r "$SCRIPT_DIR/qrcodegen.py" "$APP_DIR/"
+fi
 cp -r "$SCRIPT_DIR/pages" "$APP_DIR/"
 if [ -d "$SCRIPT_DIR/assets" ]; then
     cp -r "$SCRIPT_DIR/assets" "$APP_DIR/"
