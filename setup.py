@@ -5,6 +5,7 @@ setup(
     version="1.0.0",
     description="Libadwaita graphical interface for scrcpy",
     author="Kin",
+    license="MIT",
     packages=find_packages(),
     py_modules=["main", "window"],
     include_package_data=True,
