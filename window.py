@@ -1,6 +1,7 @@
 """Main application window with sidebar navigation and command bar."""
 
 import shlex
+import re
 import shutil
 import subprocess
 import threading
@@ -206,12 +207,23 @@ class ScrcpyWindow(Adw.ApplicationWindow):
         """
         cmd = ["scrcpy"]
         seen_flags: set[str] = set()
+        dex_mode = self._pages[0].dex_mode.get_active()
 
         device_selectors = {"--serial", "--select-usb", "--select-tcpip", "--tcpip"}
 
         for page in self._pages:
             for arg in page.get_args():
                 key = arg.split("=", 1)[0]
+                # Keep Android's window decorations available in Dex Mode;
+                # the App Launcher page normally disables them for its own
+                # isolated-app launch workflow.
+                if dex_mode and key == "--no-vd-system-decorations":
+                    continue
+                # Dex Mode's expandable-row switches are the source of truth
+                # for virtual input, even when the individual controls on the
+                # Control or Apps pages still request UHID.
+                if dex_mode and page is not self._pages[0] and key in {"--keyboard", "--mouse"}:
+                    continue
                 if key in device_selectors:
                     if "__device_selector__" in seen_flags:
                         continue
@@ -311,10 +323,12 @@ class ScrcpyWindow(Adw.ApplicationWindow):
             return
 
         cmd = self._build_command()
+        dex_mode = self._pages[0].dex_mode.get_active()
         try:
             self._process = subprocess.Popen(
                 cmd,
-                stderr=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
                 text=True,
             )
         except FileNotFoundError:
@@ -327,20 +341,101 @@ class ScrcpyWindow(Adw.ApplicationWindow):
         self._start_btn.set_visible(False)
         self._stop_btn.set_visible(True)
         # Monitor process in a thread
-        thread = threading.Thread(target=self._monitor_process, daemon=True)
+        thread = threading.Thread(
+            target=self._monitor_process,
+            args=(self._process, dex_mode, cmd),
+            daemon=True,
+        )
         thread.start()
 
-    def _monitor_process(self):
-        """Wait for the scrcpy process to exit and collect its stderr."""
-        process = self._process
-        if process is None:
+    def _monitor_process(self, process, dex_mode=False, scrcpy_cmd=None):
+        """Collect scrcpy output and set Dex's virtual display to freeform."""
+        if process is None or process.stdout is None:
             return
-        # communicate() blocks until the process exits (like wait()) and
-        # also drains stderr, so we can surface real failures — e.g. an
-        # unauthorized device, or an unsupported combination of flags —
-        # instead of just noticing that the process is gone.
-        _, stderr = process.communicate()
-        GLib.idle_add(self._on_process_exited, process.returncode, stderr or "")
+
+        output_lines = []
+        display_found = False
+        for line in process.stdout:
+            output_lines.append(line)
+            if dex_mode and not display_found:
+                match = re.search(r"New display:.*\(id=(\d+)\)", line, re.IGNORECASE)
+                if match:
+                    display_found = True
+                    self._set_display_freeform(
+                        match.group(1), scrcpy_cmd or []
+                    )
+
+        returncode = process.wait()
+        if dex_mode and not display_found and returncode == 0:
+            GLib.idle_add(
+                self._show_dex_mode_warning,
+                "scrcpy did not report the virtual display ID; freeform mode was not applied.",
+            )
+        GLib.idle_add(
+            self._on_process_exited,
+            returncode,
+            "".join(output_lines),
+        )
+
+    def _set_display_freeform(self, display_id, scrcpy_cmd):
+        """Ask Android's window manager to use freeform mode on this display."""
+        adb_cmd = ["adb"]
+        for arg in scrcpy_cmd:
+            if arg.startswith("--serial="):
+                adb_cmd.extend(["-s", arg.split("=", 1)[1]])
+                break
+            if arg == "--select-usb":
+                adb_cmd.append("-d")
+                break
+            if arg == "--select-tcpip":
+                adb_cmd.append("-e")
+                break
+            if arg.startswith("--tcpip="):
+                target = arg.split("=", 1)[1]
+                if ":" not in target:
+                    target += ":5555"
+                adb_cmd.extend(["-s", target])
+                break
+
+        adb_cmd.extend([
+            "shell",
+            "wm",
+            "set-display-windowing-mode",
+            "-d",
+            display_id,
+            "5",
+        ])
+        try:
+            result = subprocess.run(
+                adb_cmd,
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            GLib.idle_add(self._show_dex_mode_warning, str(exc))
+            return
+
+        output = "\n".join(part for part in (result.stdout, result.stderr) if part).strip()
+        output_lower = output.lower()
+        if result.returncode != 0 or any(
+            marker in output_lower
+            for marker in ("unknown command", "unknown subcommand", "error:", "not found", "exception")
+        ):
+            reason = output.splitlines()[0][:120] if output else f"adb exited with code {result.returncode}"
+            GLib.idle_add(
+                self._show_dex_mode_warning,
+                reason,
+            )
+
+    def _show_dex_mode_warning(self, message):
+        toast = Adw.Toast(
+            title=f"Android could not enable freeform windows: {message}"
+        )
+        toast.set_timeout(8)
+        self._show_toast(toast)
+        return False
 
     def _on_process_exited(self, returncode=0, stderr=""):
         """Called on main thread when scrcpy exits."""

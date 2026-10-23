@@ -1,3 +1,5 @@
+from gi.repository import Gtk, Adw
+
 from pages.base import BasePage
 
 class DisplayPage(BasePage):
@@ -59,6 +61,27 @@ class DisplayPage(BasePage):
 
         # Group: Virtual Display
         grp_vd = self._add_group("Virtual Display")
+        self.dex_row = Adw.ExpanderRow(
+            title="Dex Mode",
+            subtitle="Create a 1920×1080 desktop display with freeform windows",
+        )
+        self.dex_mode = Gtk.Switch(valign=Gtk.Align.CENTER)
+        self.dex_mode.connect("notify::active", self._notify)
+        self.dex_row.add_action(self.dex_mode)
+
+        self.dex_mouse = Adw.SwitchRow(title="Virtual Mouse")
+        self.dex_mouse.set_subtitle("Send mouse input to Android with UHID")
+        self.dex_mouse.set_active(True)
+        self.dex_mouse.connect("notify::active", self._notify)
+        self.dex_row.add_row(self.dex_mouse)
+
+        self.dex_keyboard = Adw.SwitchRow(title="Virtual Keyboard")
+        self.dex_keyboard.set_subtitle("Send keyboard input to Android with UHID")
+        self.dex_keyboard.set_active(True)
+        self.dex_keyboard.connect("notify::active", self._notify)
+        self.dex_row.add_row(self.dex_keyboard)
+        grp_vd.add(self.dex_row)
+
         self.display_id = self._add_entry(grp_vd, "Display ID")
         self.new_display = self._add_switch(grp_vd, "New Display", subtitle="Create a new virtual display")
         self.new_display_res = self._add_resolution(
@@ -117,10 +140,24 @@ class DisplayPage(BasePage):
         val = self._entry_val(self.window_height)
         if val: args.append(f'--window-height={val}')
 
-        val = self._entry_val(self.display_id)
-        if val: args.append(f'--display-id={val}')
+        if self.dex_mode.get_active():
+            # Keep these first in the command so the command builder's
+            # duplicate-flag handling gives Dex Mode precedence over the
+            # individual display and input settings on other pages.
+            args.extend([
+                '--new-display=1920x1080/140',
+                '--flex-display',
+                '--fullscreen',
+            ])
+            if self.dex_keyboard.get_active():
+                args.append('--keyboard=uhid')
+            if self.dex_mouse.get_active():
+                args.append('--mouse=uhid')
+        else:
+            val = self._entry_val(self.display_id)
+            if val: args.append(f'--display-id={val}')
 
-        if self.new_display.get_active():
+        if not self.dex_mode.get_active() and self.new_display.get_active():
             res = self._entry_val(self.new_display_res)
             dpi = self._entry_val(self.new_display_dpi)
             if res and dpi:
@@ -132,7 +169,8 @@ class DisplayPage(BasePage):
             else:
                 args.append('--new-display')
 
-        if self.flex_display.get_active(): args.append('--flex-display')
+        if not self.dex_mode.get_active() and self.flex_display.get_active():
+            args.append('--flex-display')
         if self.no_vd_destroy_content.get_active(): args.append('--no-vd-destroy-content')
         if self.no_vd_system_decorations.get_active(): args.append('--no-vd-system-decorations')
 
@@ -160,6 +198,9 @@ class DisplayPage(BasePage):
         self.window_width.set_text('')
         self.window_height.set_text('')
         self.display_id.set_text('')
+        self.dex_mode.set_active(False)
+        self.dex_mouse.set_active(True)
+        self.dex_keyboard.set_active(True)
         self.new_display.set_active(False)
         self.new_display_res.set_text('')
         self.new_display_dpi.set_text('')

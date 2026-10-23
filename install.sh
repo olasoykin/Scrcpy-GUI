@@ -29,6 +29,16 @@ else
     echo "==> Installing Scrcpy GUI for current user ($HOME)..."
 fi
 
+# Check native Python bindings before removing or copying any files. These
+# dependencies are provided by the system package manager on Linux and should
+# not be installed with pip (which is blocked by PEP 668 on many distributions).
+if ! python3 -c 'import gi; gi.require_version("Gtk", "4.0"); gi.require_version("Adw", "1"); from gi.repository import Gtk, Adw' >/dev/null 2>&1; then
+    echo "Error: Scrcpy GUI requires Python GObject, GTK 4, and libadwaita 1." >&2
+    echo "Install those system packages with your distribution's package manager, then run this installer again." >&2
+    echo "Do not use 'pip install .' for this system-integrated GTK application." >&2
+    exit 1
+fi
+
 echo "==> Searching for and removing previous versions..."
 
 # Target files and directories to clean up before installing
@@ -78,13 +88,6 @@ for ibase in "${ICON_BASES[@]}"; do
         find "$ibase" -type f \( -name "com.github.scrcpy-gui.*" -o -name "scrcpy-gui.*" \) -delete 2>/dev/null || true
     fi
 done
-
-# Uninstall pip package if previously installed
-if command -v pip3 >/dev/null 2>&1; then
-    pip3 uninstall -y scrcpy-gui >/dev/null 2>&1 || true
-elif command -v pip >/dev/null 2>&1; then
-    pip uninstall -y scrcpy-gui >/dev/null 2>&1 || true
-fi
 
 # Create key directories
 mkdir -p "$BIN_DIR"
